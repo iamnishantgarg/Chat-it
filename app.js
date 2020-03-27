@@ -2,6 +2,13 @@ const express = require("express");
 const path = require("path");
 const http = require("http");
 const socketIO = require("socket.io");
+const formatMessage = require("./util/messages");
+const {
+  userJoin,
+  getCurrentUser,
+  userLeave,
+  getRoomUsers
+} = require("./util/users");
 const app = express();
 
 // set Static folder
@@ -9,25 +16,42 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const server = http.createServer(app);
 const io = socketIO(server);
-
+const botName = "Chat-It bot";
 // run when client connects
 io.on("connection", socket => {
   //   console.log("New WS in action");
   // emit to the user on new Connection
-  socket.emit("message", "Welcome to Chat-It!");
 
-  //   broad cast to all user on a new user join
-  socket.broadcast.emit("message", "A new User has Joined!");
+  socket.on("joinRoom", ({ username, room }) => {
+    const user = userJoin(socket.id, username, room);
+    socket.join(user.room);
+    socket.emit(
+      "message",
+      formatMessage(botName, `Welcome to Chat-It!-->${user.username}`)
+    );
 
-  //   broadcast to all user when someone disconnects
-  socket.on("disconnect", () => {
-    io.emit("message", "A user has Left the chat");
+    //   broad cast to all user on a new user join
+    socket.broadcast
+      .to(user.room)
+      .emit("message", formatMessage(botName, `${user.username} has Joined!`));
   });
 
   //   getting message from client side
   socket.on("chatMessage", msg => {
     // console.log(msg);
-    io.emit("message", msg);
+    const user = getCurrentUser(socket.id);
+    io.to(user.room).emit("message", formatMessage(user.username, msg));
+  });
+
+  //   broadcast to all user when someone disconnects
+  socket.on("disconnect", () => {
+    const user = userLeave(socket.id);
+    if (user) {
+      io.to(user.room).emit(
+        "message",
+        formatMessage(botName, `${user.username} has Left the chat`)
+      );
+    }
   });
 });
 
