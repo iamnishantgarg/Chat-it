@@ -23,6 +23,12 @@ io.on("connection", socket => {
   socket.on("disconnect", () => {
     io.emit("message", "A user has Left the chat");
   });
+
+  //   getting message from client side
+  socket.on("chatMessage", msg => {
+    // console.log(msg);
+    io.emit("message", msg);
+  });
 });
 
 server.listen(3000, () => {
