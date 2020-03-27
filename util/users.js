@@ -13,7 +13,7 @@ function getCurrentUser(id) {
 
 function userLeave(id) {
   const index = users.findIndex(u => u.id == id);
-  if (index != -1) return users.splice(index, 1);
+  if (index != -1) return users.splice(index, 1)[0];
 }
 
 function getRoomUsers(room) {

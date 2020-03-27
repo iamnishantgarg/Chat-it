@@ -34,12 +34,22 @@ io.on("connection", socket => {
     socket.broadcast
       .to(user.room)
       .emit("message", formatMessage(botName, `${user.username} has Joined!`));
+
+    // sends users and rooms info
+    io.to(user.room).emit("roomUsers", {
+      users: getRoomUsers(user.room),
+      room: room
+    });
   });
 
   //   getting message from client side
   socket.on("chatMessage", msg => {
-    // console.log(msg);
+    // console.log("into chat message:-" + msg);
+    // console.log(socket.id);
+
     const user = getCurrentUser(socket.id);
+    // console.log(user);
+
     io.to(user.room).emit("message", formatMessage(user.username, msg));
   });
 
@@ -51,6 +61,10 @@ io.on("connection", socket => {
         "message",
         formatMessage(botName, `${user.username} has Left the chat`)
       );
+      io.to(user.room).emit("roomUsers", {
+        users: getRoomUsers(user.room),
+        room: user.room
+      });
     }
   });
 });
